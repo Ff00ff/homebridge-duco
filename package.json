@@ -1,5 +1,4 @@
 {
-  "private": true,
   "displayName": "Homebridge Duco",
   "name": "homebridge-plugin-duco",
   "version": "1.0.0",
@@ -24,7 +23,9 @@
     "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "duco",
+    "ventilation"
   ],
   "dependencies": {
     "abort-controller": "^3.0.0",
