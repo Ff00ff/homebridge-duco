@@ -41,18 +41,17 @@ export const startDucoAccessory = (
               `Could not receive new ventilation level for '${ducoHost}'. Falling back to old ventilation level which may be out of date.`
             );
           }
-          return;
+        } else if (level === ventilationLevel) {
+          platform.log.info(
+            `Ventilation level is still ${ventilationLevel} for DUCO host '${ducoHost}'`
+          );
+        } else {
+          ventilationLevel = level;
+
+          platform.log.info(
+            `New ventilation level = ${ventilationLevel} for DUCO host '${ducoHost}'`
+          );
         }
-
-        if (level === ventilationLevel) {
-          return;
-        }
-
-        ventilationLevel = level;
-
-        platform.log.info(
-          `New ventilation level = ${ventilationLevel} for DUCO host '${ducoHost}'`
-        );
       })
       .catch((error) => {
         platform.log.info(
@@ -63,7 +62,7 @@ export const startDucoAccessory = (
   };
 
   // TODO: can we move this refresh interval to the platform config?
-  const interval = setInterval(refreshVentilationLevel, 1000 * 60 * 5);
+  const interval = setInterval(refreshVentilationLevel, 1000 * 60);
 
   service
     .getCharacteristic(platform.Characteristic.On)
@@ -71,6 +70,10 @@ export const startDucoAccessory = (
       const newVentilationLevel = val
         ? DucoVentilationLevel.HIGH
         : DucoVentilationLevel.AUTO;
+
+      platform.log.info(
+        `Setting ventilation level to '${newVentilationLevel}' for '${ducoHost}'`
+      );
 
       try {
         await ducoApi.changeVentilationLevel(newVentilationLevel);
@@ -86,7 +89,9 @@ export const startDucoAccessory = (
       }
     })
     .onGet(async () => {
-      if (!ventilationLevel) {
+      // When we have not been able to fetch the ventilation level, we cannot return any default value or previous value, and we're not
+      // allowed to await a promise here.
+      if (ventilationLevel === undefined) {
         throw new platform.api.hap.HapStatusError(
           platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE
         );
@@ -95,11 +100,15 @@ export const startDucoAccessory = (
       return ventilationLevel === DucoVentilationLevel.HIGH;
     });
 
-  return function cleanUp() {
-    platform.log.debug(`Cleaning up DUCO `);
+  refreshVentilationLevel();
 
-    // TODO: does this also clean up all listeners on the characteristics?
-    service.removeAllListeners();
+  return function cleanUp() {
+    platform.log.debug(`Cleaning up DUCO`);
+
+    service
+      .getCharacteristic(platform.Characteristic.On)
+      .removeOnGet()
+      .removeOnSet();
 
     clearInterval(interval);
   };

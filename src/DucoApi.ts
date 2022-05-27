@@ -27,16 +27,22 @@ export const makeDucoApi = (host: string) => {
         controller.abort();
       }, 1000 * 10);
       try {
+        const value = Object.keys(ventilationLevels).find(
+          (key) => ventilationLevels[parseInt(key, 10)] === level
+        );
         const response = await fetch(
-          `http://${host}/nodesetoverrule?node=1&value=${Object.keys(
-            ventilationLevels
-          ).find((key) => ventilationLevels[parseInt(key, 10)] === level)}`,
+          `http://${host}/nodesetoverrule?node=1&value=${value}`,
           {
             signal: controller.signal,
           }
         );
         const result = await response.text();
-        return result === `SUCCESS`;
+        const isSuccess = result === `SUCCESS`;
+        if (!isSuccess) {
+          throw new Error(
+            `Could not set overrule to value '${value}' because response was '${result}'`
+          );
+        }
       } finally {
         clearTimeout(timeout);
       }
