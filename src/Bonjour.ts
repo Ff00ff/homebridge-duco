@@ -1,9 +1,14 @@
 import Bonjour from "bonjour-service";
-import { DucoVentilationLevel, makeDucoApi } from "./DucoApi";
 
-export const makeBonjour = () => {
+export interface BonjourProps {
+  findTimeout?: number;
+}
+
+const DEFAULT_FIND_TIMEOUT = 1000 * 20;
+
+export const makeBonjour = ({ findTimeout }: BonjourProps) => {
   return {
-    find(type: string, serviceName: string) {
+    findFirst(type: string, serviceName: string) {
       return new Promise<string | undefined>((resolve) => {
         const instance = new Bonjour();
         const browser = instance.find({ type }, (service) => {
@@ -23,12 +28,11 @@ export const makeBonjour = () => {
           instance.destroy();
         };
 
-        // TODO: this find timeout should also be set in a config somewhere
         const timeout = setTimeout(() => {
           cleanUp();
 
           resolve(undefined);
-        }, 1000 * 10);
+        }, findTimeout || DEFAULT_FIND_TIMEOUT);
       });
     },
   };
