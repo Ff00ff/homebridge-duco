@@ -57,7 +57,7 @@ export const makeDucoApi = (host: string) => {
         `/nodesetoverrule?node=${node}&value=${value}`
       );
       const result = await response.text();
-      const isSuccess = result === `SUCCESS`;
+      const isSuccess = result === "SUCCESS";
       if (!isSuccess) {
         throw new Error(
           `Could not set overrule to value '${value}' on '${host}#${node}' because response was '${result}'`
